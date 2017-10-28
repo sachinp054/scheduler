@@ -7,3 +7,4 @@ src/main/java/com/sacknibbles/sch/avro/model/*
 src/main/java/com/sacknibbles/sch/controller/avro/util/SchemaBuilderUtil.java
 src/test/java/com/sacknibbles/sch/dao/impl/package-info.java
 src/test/java/com/sacknibbles/sch/payload/util/TestPayloadBuilder.java
+/target/
