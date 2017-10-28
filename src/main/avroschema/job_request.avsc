@@ -37,6 +37,14 @@
          "type":"string"
       },
       {
+         "name":"jobId",
+         "type":[
+            "string",
+            "null"
+         ],
+         "default":"f4048be6-1dad-4e1c-9ecc-0a300ab62847"
+      },
+      {
          "name":"schedulerType",
          "type":[
             {

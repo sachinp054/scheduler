@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.quartz.JobKey;
 import org.quartz.Trigger;
 
 import com.sacknibbles.sch.avro.model.JobRequestRecord;
@@ -31,15 +30,12 @@ public class TriggerBuilder {
 	
 	public static Set<Trigger> buidlTriggers(JobRequestRecord jobResuestRecord, Builder respBuilder){
 		TriggerRecord trigger = jobResuestRecord.getTrigger();
-		String jobGroupName = jobResuestRecord.getJobGroupName();
-		String jobName = jobResuestRecord.getJobName();
-		JobKey jobKey = new JobKey(jobGroupName,jobName);
 		String cron = trigger.getCron();
 		String schedule = trigger.getSchedule();
 		Trigger t = null;
 		if(!isNullOrEmpty(cron)){
 			if(isValidExpression(cron)){
-				t = newTrigger().withIdentity(getTriggerKey(jobKey)).withSchedule(cronSchedule(cron))
+				t = newTrigger().withIdentity(getTriggerKey()).withSchedule(cronSchedule(cron))
 						.usingJobData("cron",cron).build();
 			}else{
 				respBuilder.setException(new InvalidCronExpression("Cron expression is incorrect").toString())
@@ -49,7 +45,7 @@ public class TriggerBuilder {
 			Date triggerTime = null;
 			try{
 				triggerTime = HttpJobDateParser.getDateTime(schedule);
-				t = newTrigger().withIdentity(getTriggerKey(jobKey)).startAt(triggerTime)
+				t = newTrigger().withIdentity(getTriggerKey()).startAt(triggerTime)
 						.usingJobData("schedule",schedule).build();
 			}catch(Exception e){
 				respBuilder.setException(e.toString())
@@ -64,8 +60,8 @@ public class TriggerBuilder {
 	 * @param jobKey
 	 * @return
 	 */
-	private static String getTriggerKey(JobKey jobKey) {
-		return Utils.getId()+"#"+jobKey.toString();
+	private static String getTriggerKey() {
+		return Utils.getId();
 	}
 
 	/**

@@ -24,6 +24,7 @@ import com.sacknibbles.sch.avro.model.SchedulerResponse.Builder;
 import com.sacknibbles.sch.avro.model.SchedulerType;
 import com.sacknibbles.sch.builder.JobDetailBuilder;
 import com.sacknibbles.sch.builder.TriggerBuilder;
+import com.sacknibbles.sch.controller.avro.util.Utils;
 import com.sacknibbles.sch.factory.HttpJobSchedulerFactory;
 import com.sacknibbles.sch.job.HttpJob;
 import com.sacknibbles.sch.request.validator.JobRequestValidator;
@@ -53,8 +54,9 @@ public class HttpJobScheduler {
 			if (respbuilder.hasException()) {
 				return respbuilder.build();
 			}
-			JobKey jobKey = new JobKey(jobRequest.getJobGroupName(), jobRequest.getJobName());
-			respbuilder.setJobGroupName(jobRequest.getJobGroupName()).setJobName(jobRequest.getJobName())
+			
+			JobKey jobKey = Utils.getJobKey(jobRequest.getJobId(),jobRequest.getJobGroupName(),jobRequest.getJobName());
+			respbuilder.setJobId(jobRequest.getJobId()).setJobGroupName(jobRequest.getJobGroupName()).setJobName(jobRequest.getJobName())
 					.setJobKey(jobKey.toString());
 			SchedulerType schedulerType = jobRequest.getSchedulerType();
 			Scheduler scheduler = schFactory.getScheduler(schedulerType);

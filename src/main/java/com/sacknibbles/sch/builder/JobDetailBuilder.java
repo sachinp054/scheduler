@@ -21,6 +21,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 
 import com.sacknibbles.sch.avro.model.JobRequestRecord;
+import com.sacknibbles.sch.controller.avro.util.Utils;
 
 /**
  * @author Sachin
@@ -31,7 +32,7 @@ public class JobDetailBuilder {
 	private JobDetailBuilder(){}
 	
 	public static JobDetail buildJobDetail(JobRequestRecord jobRequestRecord, Class<? extends Job> httpJobType){
-		JobKey jobKey = new JobKey(jobRequestRecord.getJobGroupName(), jobRequestRecord.getJobName());
+		JobKey jobKey = Utils.getJobKey(jobRequestRecord.getJobId(), jobRequestRecord.getJobGroupName(), jobRequestRecord.getJobName());
 		JobDataMap jobDataMap = new JobDataMap();
 		jobDataMap.put(JOB_GROUP_NAME, jobRequestRecord.getJobGroupName());
 		jobDataMap.put(JOB_NAME, jobRequestRecord.getJobName());
