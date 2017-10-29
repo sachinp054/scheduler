@@ -16,4 +16,17 @@ public class HttpJobSchedulerException extends Exception{
 	public HttpJobSchedulerException(String message){
 		super(message);
 	}
+
+	/**
+	 * 
+	 */
+	public HttpJobSchedulerException() {
+	}
+
+	/**
+	 * @param cause
+	 */
+	public HttpJobSchedulerException(Throwable cause) {
+		super(cause);
+	}
 }

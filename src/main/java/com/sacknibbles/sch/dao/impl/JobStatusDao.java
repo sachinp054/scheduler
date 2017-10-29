@@ -21,11 +21,11 @@ import com.sacknibbles.sch.entity.JobStatusVO;
 @Service
 public class JobStatusDao implements Dao<JobStatusVO>{
 
-	private final String INSERT_QUERY = "INSERT INTO JOB_STATUS (JOB_ID,JOB_STATUS,JOB_START_TIME,JOB_END_TIME,ERR_DESC)"
+	private final String INSERT_QUERY = "INSERT INTO JOB_STATUS (JOB_ID,JOB_STATUS,JOB_START_TIME,JOB_COMPLETION_TIME,ERROR_DESC)"
 			+ " VALUES(?,?,?,?,?)";
-	private final String UPDATE_QUERY = "UPDATE JOB_STATUS SET JOB_STATUS=?, JOB_START_TIME=?,"
-			+ "JOB_END_TIME=?,ERR_DESC=? WHERE JOB_ID=?";
-	private final String FETCH_ALL_QUERY = " SELECT JOB_ID,JOB_STATUS,JOB_START_TIME,JOB_END_TIME,ERR_DESC FROM"
+	private final String UPDATE_QUERY = "UPDATE JOB_STATUS SET JOB_STATUS=?, JOB_COMPLETION_TIME=?,"
+			+ "JOB_END_TIME=?,ERROR_DESC=? WHERE JOB_ID=?";
+	private final String FETCH_ALL_QUERY = " SELECT JOB_ID,JOB_STATUS,JOB_START_TIME,JOB_COMPLETION_TIME,ERROR_DESC FROM"
 			+ " JOB_STATUS ";
 	private final String FETCH_BY_ID_QUERY = FETCH_ALL_QUERY+" WHERE JOB_ID =?";
 	
@@ -35,13 +35,13 @@ public class JobStatusDao implements Dao<JobStatusVO>{
 	@Override
 	public JobStatusVO insert(JobStatusVO t) throws Exception {
 		Objects.requireNonNull(t);
-		jdbcTemplate.update(INSERT_QUERY,t.getJobId(),t.getJobStatus(),t.getJobStartTime(),t.getJobCompletionTime(),t.getErrorDesc());
+		jdbcTemplate.update(INSERT_QUERY,t.getJobId(),t.getJobStatus().name(),t.getJobStartTime(),t.getJobCompletionTime(),t.getErrorDesc());
 		return t;
 	}
 
 	@Override
 	public JobStatusVO update(JobStatusVO t) throws Exception {
-		jdbcTemplate.update(UPDATE_QUERY,t.getJobStatus(),t.getJobStartTime(),t.getJobCompletionTime(),t.getErrorDesc(),t.getJobId());
+		jdbcTemplate.update(UPDATE_QUERY,t.getJobStatus().name(),t.getJobStartTime(),t.getJobCompletionTime(),t.getErrorDesc(),t.getJobId());
 		return t;
 	}
 

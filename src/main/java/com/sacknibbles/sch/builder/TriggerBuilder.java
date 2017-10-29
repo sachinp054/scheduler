@@ -38,7 +38,7 @@ public class TriggerBuilder {
 				t = newTrigger().withIdentity(getTriggerKey()).withSchedule(cronSchedule(cron))
 						.usingJobData("cron",cron).build();
 			}else{
-				respBuilder.setException(new InvalidCronExpression("Cron expression is incorrect").toString())
+				respBuilder.setException(new InvalidCronExpression().toString())
 				.setResponseMessage("Cron expression ["+cron+"] is invalid!!");
 			}
 		}else if(!isNullOrEmpty(schedule)){

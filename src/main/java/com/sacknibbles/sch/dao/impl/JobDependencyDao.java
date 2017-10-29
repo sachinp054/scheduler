@@ -33,9 +33,9 @@ import com.sacknibbles.sch.scheduler.exception.UnSupportedOperationException;
 public class JobDependencyDao implements Dao<JobDependencyVO> {
 
 
-	private final String INSERT_QUERY = "INSERT INTO JOB_DEPENDENCY (JOB_ID,DEPENDENT_JOB_ID,IS_MANDATORY)"
+	private final String INSERT_QUERY = "INSERT INTO JOB_DEPENDENCY (JOB_ID,DEPENDENT_JOB_ID,IS_MANDATORY_DEPENDENCY)"
 			+ " VALUES (?,?,?)";
-	private final String FETCH_ALL_QUERY = "SELECT JOB_ID,DEPENDENT_JOB_ID,IS_MANDATORY FROM JOB_DEPENDENCY";
+	private final String FETCH_ALL_QUERY = "SELECT JOB_ID,DEPENDENT_JOB_ID,IS_MANDATORY_DEPENDENCY FROM JOB_DEPENDENCY";
 
 	private final String FETCH_BY_ID_QUERY = FETCH_ALL_QUERY + " WHERE JOB_ID = ?'";
 
