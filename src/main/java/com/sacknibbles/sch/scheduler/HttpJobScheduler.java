@@ -19,16 +19,20 @@ import org.springframework.stereotype.Service;
 
 import com.sacknibbles.sch.avro.model.JobRequestRecord;
 import com.sacknibbles.sch.avro.model.JobStatus;
-import com.sacknibbles.sch.avro.model.SchedulerResponse;
-import com.sacknibbles.sch.avro.model.SchedulerResponse.Builder;
 import com.sacknibbles.sch.avro.model.SchedulerType;
 import com.sacknibbles.sch.builder.JobDetailBuilder;
 import com.sacknibbles.sch.builder.TriggerBuilder;
+import com.sacknibbles.sch.constants.Constant;
 import com.sacknibbles.sch.controller.avro.util.Utils;
+import com.sacknibbles.sch.entity.JobStatusVO;
 import com.sacknibbles.sch.factory.HttpJobSchedulerFactory;
 import com.sacknibbles.sch.job.HttpJob;
 import com.sacknibbles.sch.request.validator.JobRequestValidator;
+import com.sacknibbles.sch.scheduler.exception.BadRequestException;
+import com.sacknibbles.sch.scheduler.exception.DuplicateJobKeyException;
+import com.sacknibbles.sch.scheduler.exception.HttpJobSchedulerDaoException;
 import com.sacknibbles.sch.scheduler.exception.HttpJobSchedulerException;
+import com.sacknibbles.sch.scheduler.exception.SchedulerUnavailableException;
 import com.sacknibbles.sch.scheduler.helper.SchedulerHelper;
 
 /**
@@ -46,107 +50,99 @@ public class HttpJobScheduler {
 	@Autowired
 	private SchedulerHelper schedulerHelper;
 
-	public SchedulerResponse scheduleJob(String jobRequestPayload) {
-		Builder respbuilder = SchedulerResponse.newBuilder();
-		JobRequestRecord jobRequest = preProcessSchedulingRequest(jobRequestPayload, respbuilder);
-		if(respbuilder.hasException()){
-			handleException(jobRequest, respbuilder, new SchedulerException(respbuilder.getResponseMessage()));
-			return respbuilder.build();
-		}
-		SchedulerResponse response = scheduleJobRequest(jobRequest, respbuilder);
-		postProcessSchedulingRequest(jobRequest,respbuilder,response);
-		return respbuilder.build();
-	}
-
-	/**
-	 * 
-	 */
-	private void postProcessSchedulingRequest(JobRequestRecord jobRequest,Builder respbuilder, SchedulerResponse response) {
-		try {
-			schedulerHelper.createJobStatusEntry(response.getJobId(), response.getJobStatus(), response.getResponseMessage());
-		} catch (Exception e) {
-			handleException(jobRequest, respbuilder, new SchedulerException(e.getCause()));
-			logger.error("Could not update job status entry for response::{}",response);
-		}
+	public JobRequestRecord scheduleJob(String jobRequestPayload) throws SchedulerException, HttpJobSchedulerException {
+		JobRequestRecord jobRequest = preProcessSchedulingRequest(jobRequestPayload);
+		scheduleJobRequest(jobRequest);
+		return jobRequest;
 	}
 
 	/**
 	 * @param jobRequestPayload
 	 * @return
+	 * @throws HttpJobSchedulerException
 	 */
-	private SchedulerResponse scheduleJobRequest(JobRequestRecord jobRequest, Builder respbuilder) {
-
+	private void scheduleJobRequest(JobRequestRecord jobRequest) throws HttpJobSchedulerException {
 		try {
 
 			JobKey jobKey = Utils.getJobKey(jobRequest.getJobId(), jobRequest.getJobGroupName(),
 					jobRequest.getJobName());
-			respbuilder.setJobId(jobRequest.getJobId()).setJobGroupName(jobRequest.getJobGroupName())
-					.setJobName(jobRequest.getJobName()).setJobKey(jobKey.toString());
 			SchedulerType schedulerType = jobRequest.getSchedulerType();
 			Scheduler scheduler = schFactory.getScheduler(schedulerType);
-			handleNewJobScheduling(respbuilder, jobRequest, jobKey, schedulerType, scheduler);
-		} catch (SchedulerException schExp) {
-			handleException(jobRequest, respbuilder, schExp);
+			synchronized (jobKey) {
+				handleNewJobScheduling(jobRequest, jobKey, schedulerType, scheduler);
+				updateJobStatus(jobRequest);
+			}			
+		} catch (Exception e) {
+			handleException(jobRequest, e);
 		}
-		return respbuilder.build();
+	}
 
+	/**
+	 * @param jobRequest
+	 * @throws HttpJobSchedulerDaoException
+	 */
+	private void updateJobStatus(JobRequestRecord jobRequest) throws HttpJobSchedulerDaoException {
+		JobStatusVO vo = schedulerHelper.getJobStatusVo(jobRequest.getJobId());
+		vo.setJobStatus(JobStatus.SCHEDULED);
+		schedulerHelper.updateJobStatus(vo);
 	}
 
 	/**
 	 * @param jobRequest
 	 * @param respbuilder
 	 * @param schExp
+	 * @throws HttpJobSchedulerException
 	 */
-	private void handleException(JobRequestRecord jobRequest, Builder respbuilder, SchedulerException schExp) {
-		respbuilder.setException(HttpJobSchedulerException.class.getName()).setJobStatus(JobStatus.FAILED)
-				.setJobId(jobRequest.getJobId()).setJobGroupName(jobRequest.getJobGroupName()).setJobName(jobRequest.getJobName())
-				.setResponseMessage("Exception occured while scheduling job ::[JobName-{" + jobRequest.getJobName()
-						+ "}," + "JobGroupName-{" + jobRequest.getJobGroupName() + "},JobId-{"
-						+ jobRequest.getJobId() + "}]:: cause::{" + schExp.getLocalizedMessage() + "}");
+	private void handleException(JobRequestRecord jobRequest, Exception e) throws HttpJobSchedulerException {
 		logger.error("Exception occured while scheduling job ::[JobName-{},JobGroupName-{},JobId-{}]:: cause::{}",
-				jobRequest.getJobName(), jobRequest.getJobGroupName(), jobRequest.getJobId(), schExp);
+				jobRequest.getJobName(), jobRequest.getJobGroupName(), jobRequest.getJobId(), e);
+		throw new HttpJobSchedulerException(
+				"Exception occured while scheduling job ::[JobName-{" + jobRequest.getJobName() + "},JobGroupName-{"
+						+ jobRequest.getJobGroupName() + "},JobId-{" + jobRequest.getJobId() + "}])");
 	}
 
 	/**
 	 * @param respbuilder
 	 * @return
+	 * @throws BadRequestException
+	 * @throws SchedulerException
+	 * @throws DuplicateJobKeyException
+	 * @throws SchedulerUnavailableException
+	 * @throws HttpJobSchedulerDaoException
+	 * @throws HttpJobSchedulerException
 	 * 
 	 */
-	private JobRequestRecord preProcessSchedulingRequest(String jobRequestPayload, Builder respbuilder) {
-
-		JobRequestRecord jobRequest = requestValidator.jobRequestValidator(jobRequestPayload, respbuilder);
-		if(respbuilder.hasException())
-			return jobRequest;
-		try {
-			Scheduler scheduler = schFactory.getScheduler(jobRequest.getSchedulerType());
-			if(Objects.nonNull(scheduler) ){
-				JobKey jobKey = Utils.getJobKey(jobRequest.getJobId(), jobRequest.getJobGroupName(),
-						jobRequest.getJobName());
-				if (schedulerHelper.ifJobExists(jobRequest.getSchedulerType(), jobKey)) {
-					handleAlreadyScheduledJob(respbuilder, jobKey, scheduler);
-					return jobRequest;
-				}
-			}else{
-				String message = " scheduler is not running. Checkout the application startup log for more information.";
-				respbuilder.setException(schFactory.getException(jobRequest.getSchedulerType()).toString())
-						.setJobStatus(JobStatus.FAILED).setResponseMessage(message);
-				logger.warn("{} {}", jobRequest.getSchedulerType(), message);
+	private JobRequestRecord preProcessSchedulingRequest(String jobRequestPayload) throws HttpJobSchedulerException, SchedulerException {
+		JobRequestRecord jobRequest = null;
+		jobRequest = requestValidator.jobRequestValidator(jobRequestPayload);
+		Scheduler scheduler = schFactory.getScheduler(jobRequest.getSchedulerType());
+		if (Objects.nonNull(scheduler)) {
+			JobKey jobKey = Utils.getJobKey(jobRequest.getJobId(), jobRequest.getJobGroupName(),
+					jobRequest.getJobName());
+			if (schedulerHelper.ifJobExists(jobRequest.getSchedulerType(), jobKey)) {
+				handleAlreadyScheduledJob(jobKey, scheduler);
+				return jobRequest;
 			}
+		} else {
+			throw new SchedulerUnavailableException(jobRequest.getSchedulerType()
+					+ " scheduler is not running. Checkout the application startup log for more information.");
+		}
+		schedulerHelper.createJobDefinition(jobRequest.getJobId(), jobRequest.getJobName(),
+				jobRequest.getJobGroupName(), jobRequestPayload);
+		schedulerHelper.createJobDependency(jobRequest);
+		schedulerHelper.createJobStatusEntry(jobRequest.getJobId(), JobStatus.ADDED, "");
+		List<String> mandatoryDependencies = jobRequest.getMandatoryDependencies();
+		if(Objects.nonNull(mandatoryDependencies)){
+			//Need to improve should be batch execution and few extra things
+			mandatoryDependencies.forEach(m->{try {
+				schedulerHelper.createJobStatusEntry(m, JobStatus.ADDED, "");
+			} catch (Exception e) {
+				logger.error("[Mandatory dependendency of::{}] Could not create job status for jobId::{}",m);
+			}});
 			
-			schedulerHelper.createJobDefinition(jobRequest.getJobId(), jobRequest.getJobName(),
-					jobRequest.getJobGroupName(), jobRequestPayload);
-			schedulerHelper.createJobDependency(jobRequest);	
-		} catch (Exception e) {
-			respbuilder.setException(e.getClass().getName());
-			String errMsg = "Exception occured while scheduling job!! cause::"+e.getLocalizedMessage();
-			respbuilder.setResponseMessage(errMsg);
-			try {
-				schedulerHelper.createJobStatusEntry(jobRequest.getJobId(), JobStatus.FAILED, errMsg);
-			} catch (Exception e1) {
-				logger.error("Could not create job status entry for jobRequest::{}",e);
-			}
 		}
 		return jobRequest;
+
 	}
 
 	/**
@@ -156,14 +152,13 @@ public class HttpJobScheduler {
 	 * @param schedulerType
 	 * @param scheduler
 	 * @throws SchedulerException
+	 * @throws BadRequestException
 	 */
-	private void handleNewJobScheduling(Builder respbuilder, JobRequestRecord jobRequest, JobKey jobKey,
-			SchedulerType schedulerType, Scheduler scheduler) throws SchedulerException {
-		Set<Trigger> triggers = TriggerBuilder.buidlTriggers(jobRequest, respbuilder);
-		if (respbuilder.hasException()) {
-			return;
-		}
+	private JobStatus handleNewJobScheduling(JobRequestRecord jobRequest, JobKey jobKey, SchedulerType schedulerType,
+			Scheduler scheduler) throws SchedulerException, BadRequestException {
+		Set<Trigger> triggers = TriggerBuilder.buidlTriggers(jobRequest);
 		JobDetail jobDetail = JobDetailBuilder.buildJobDetail(jobRequest, HttpJob.class);
+		jobDetail.getJobDataMap().put(Constant.SCHEDULER_HELPER, schedulerHelper);
 		if (triggers.isEmpty()) {
 			scheduler.addJob(jobDetail, false);
 		} else {
@@ -171,13 +166,9 @@ public class HttpJobScheduler {
 		}
 		String nextFireTime = schedulerHelper.getNextFireTime(schedulerType, jobKey);
 		if ("NA".equals(nextFireTime)) {
-			respbuilder.setJobStatus(JobStatus.ADDED_NOTSCHEDULED).setResponseMessage(
-					"Job added to scheduler but not scheduled. There must be be some problem with trigger details provided."
-							+ "Use endpoint to update job trigger!!");
-		} else {
-			respbuilder.setJobStatus(JobStatus.SCHEDULED)
-					.setResponseMessage("Jobscheduled at ::" + schedulerHelper.getNextFireTime(schedulerType, jobKey));
+			return JobStatus.ADDED_NOTSCHEDULED;
 		}
+		return JobStatus.SCHEDULED;
 	}
 
 	/**
@@ -185,13 +176,11 @@ public class HttpJobScheduler {
 	 * @param jobKey
 	 * @param scheduler
 	 * @throws SchedulerException
+	 * @throws DuplicateJobKeyException
 	 */
-	private void handleAlreadyScheduledJob(Builder respbuilder, JobKey jobKey, Scheduler scheduler)
-			throws SchedulerException {
+	private void handleAlreadyScheduledJob(JobKey jobKey, Scheduler scheduler)
+			throws SchedulerException, DuplicateJobKeyException {
 		List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
-		String message = "Job alreadey scheduled for jobKey:: " + jobKey;
-		respbuilder.setJobStatus(JobStatus.FAILED)
-				.setResponseMessage(message + " at ::" + triggers.get(0).getNextFireTime())
-				.setException(new HttpJobSchedulerException().toString());
+		throw new DuplicateJobKeyException("Job alreadey scheduled for jobKey at" + triggers.get(0).getNextFireTime());
 	}
 }

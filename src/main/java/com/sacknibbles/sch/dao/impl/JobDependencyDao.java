@@ -23,7 +23,8 @@ import com.sacknibbles.sch.constants.DaoName;
 import com.sacknibbles.sch.dao.Dao;
 import com.sacknibbles.sch.entity.DependentJob;
 import com.sacknibbles.sch.entity.JobDependencyVO;
-import com.sacknibbles.sch.scheduler.exception.UnSupportedOperationException;
+import com.sacknibbles.sch.scheduler.exception.HttpJobSchedulerDaoException;
+import com.sacknibbles.sch.scheduler.exception.UnSupportedDaoOperationException;
 
 /**
  * @author Sachin
@@ -31,7 +32,6 @@ import com.sacknibbles.sch.scheduler.exception.UnSupportedOperationException;
  */
 @Service
 public class JobDependencyDao implements Dao<JobDependencyVO> {
-
 
 	private final String INSERT_QUERY = "INSERT INTO JOB_DEPENDENCY (JOB_ID,DEPENDENT_JOB_ID,IS_MANDATORY_DEPENDENCY)"
 			+ " VALUES (?,?,?)";
@@ -43,39 +43,51 @@ public class JobDependencyDao implements Dao<JobDependencyVO> {
 	private JdbcTemplate jdbcTemplate;
 
 	@Override
-	public JobDependencyVO insert(JobDependencyVO t) throws Exception {
-		Objects.requireNonNull(t);
-		List<DependentJob> dependentOn = t.getDependentOn();
-		if (Objects.nonNull(dependentOn)) {
-			batchInsert(t, dependentOn);
-		} else {
-			jdbcTemplate.update(INSERT_QUERY, t.getJobId(), null, null);
+	public JobDependencyVO insert(JobDependencyVO t) throws HttpJobSchedulerDaoException {
+		try{
+			Objects.requireNonNull(t);
+			List<DependentJob> dependentOn = t.getDependentOn();
+			if (Objects.nonNull(dependentOn)) {
+				batchInsert(t, dependentOn);
+			} else {
+				jdbcTemplate.update(INSERT_QUERY, t.getJobId(), null, null);
+			}
+			return t;
+		}catch(Exception e){
+			throw new HttpJobSchedulerDaoException(e);
 		}
-		return t;
 	}
 
 	@Override
-	public JobDependencyVO update(JobDependencyVO t) throws Exception {
-		throw new UnSupportedOperationException("Update on dependency is not permitted!!");
+	public JobDependencyVO update(JobDependencyVO t) throws HttpJobSchedulerDaoException {
+		throw new UnSupportedDaoOperationException("Update on dependency is not permitted!!");
 	}
 
 	@Override
-	public List<JobDependencyVO> fetchAll() throws Exception {
-		List<JobDependencyVoTemp> result = jdbcTemplate.query(FETCH_ALL_QUERY, new JobDependencyRowExtractor());	
-		return createJobDependencyVO(result);
+	public List<JobDependencyVO> fetchAll() throws HttpJobSchedulerDaoException {
+		try {
+			List<JobDependencyVoTemp> result = jdbcTemplate.query(FETCH_ALL_QUERY, new JobDependencyRowExtractor());
+			return createJobDependencyVO(result);
+		} catch (Exception e) {
+			throw new HttpJobSchedulerDaoException(e);
+		}
 	}
 
 	@Override
-	public JobDependencyVO fetchById(String id) throws Exception {
-		List<JobDependencyVoTemp> result = jdbcTemplate.query(FETCH_BY_ID_QUERY, new Object[]{id},  new JobDependencyRowExtractor());	
-		return createJobDependencyVO(result).get(0);
+	public JobDependencyVO fetchById(String id) throws HttpJobSchedulerDaoException {
+		try {
+			List<JobDependencyVoTemp> result = jdbcTemplate.query(FETCH_BY_ID_QUERY, new Object[] { id },
+					new JobDependencyRowExtractor());
+			return createJobDependencyVO(result).get(0);
+		} catch (Exception e) {
+			throw new HttpJobSchedulerDaoException(e);
+		}
 	}
 
 	@Override
 	public DaoName getDaoName() {
 		return DaoName.JOB_DEPENDENCY;
 	}
-
 
 	/**
 	 * @param result
@@ -86,11 +98,11 @@ public class JobDependencyDao implements Dao<JobDependencyVO> {
 		if (!result.isEmpty()) {
 			Map<String, List<JobDependencyVoTemp>> map = result.stream()
 					.collect(Collectors.groupingBy(JobDependencyVoTemp::getJobId));
-			
-			map.forEach((k,v)->{
+
+			map.forEach((k, v) -> {
 				JobDependencyVO jobDependencyVO = new JobDependencyVO();
 				jobDependencyVO.setJobId(k);
-				v.forEach(value->{
+				v.forEach(value -> {
 					DependentJob dependentJob = new DependentJob();
 					dependentJob.setJobId(value.getDependentJobId());
 					dependentJob.setManadatoryDependency(value.isManDatory());
@@ -176,6 +188,5 @@ public class JobDependencyDao implements Dao<JobDependencyVO> {
 		}
 
 	}
-
 
 }

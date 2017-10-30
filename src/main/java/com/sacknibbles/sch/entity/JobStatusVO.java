@@ -79,5 +79,13 @@ public class JobStatusVO {
 	public void setJobCompletionTime(Date jobCompletionTime) {
 		this.jobCompletionTime = jobCompletionTime;
 	}
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "JobStatusVO [jobId=" + jobId + ", jobStatus=" + jobStatus + "]";
+	}
 		
+	
 }

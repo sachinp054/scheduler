@@ -42,7 +42,7 @@
             "string",
             "null"
          ],
-         "default":"f4048be6-1dad-4e1c-9ecc-0a300ab62847"
+         "default":"9e8d19d1-34f3-42ef-8f54-d1e2f34c5f6d"
       },
       {
          "name":"schedulerType",
@@ -63,10 +63,10 @@
          "name":"targetUrl",
          "type":{
             "type":"record",
-            "name":"TargetURLRecord",
+            "name":"URLRecord",
             "fields":[
                {
-                  "name":"targetURI",
+                  "name":"uri",
                   "type":"string"
                },
                {
@@ -140,59 +140,7 @@
       },
       {
          "name":"ackUrl",
-         "type":{
-            "type":"record",
-            "name":"AckURLRecord",
-            "fields":[
-               {
-                  "name":"ackURI",
-                  "type":"string"
-               },
-               {
-                  "name":"method",
-                  "type":"string"
-               },
-               {
-                  "name":"headers",
-                  "type":[
-                     {
-                        "type":"map",
-                        "values":"string"
-                     },
-                     "null"
-                  ]
-               },
-               {
-                  "name":"isBasicAuthEnabled",
-                  "type":[
-                     "boolean",
-                     "null"
-                  ],
-                  "default":false
-               },
-               {
-                  "name":"userName",
-                  "type":[
-                     "string",
-                     "null"
-                  ]
-               },
-               {
-                  "name":"password",
-                  "type":[
-                     "string",
-                     "null"
-                  ]
-               },
-               {
-                  "name":"paylaod",
-                  "type":[
-                     "string",
-                     "null"
-                  ]
-               }
-            ]
-         },
+         "type":"URLRecord",
          "default":null
       },
       {

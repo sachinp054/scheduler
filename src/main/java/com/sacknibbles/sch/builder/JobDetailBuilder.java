@@ -7,6 +7,7 @@ import static com.sacknibbles.sch.constants.Constant.ACK_EMAIL;
 import static com.sacknibbles.sch.constants.Constant.ACK_URL;
 import static com.sacknibbles.sch.constants.Constant.CLIENT_IDENTIFIER;
 import static com.sacknibbles.sch.constants.Constant.JOB_GROUP_NAME;
+import static com.sacknibbles.sch.constants.Constant.JOB_ID;
 import static com.sacknibbles.sch.constants.Constant.JOB_KEY;
 import static com.sacknibbles.sch.constants.Constant.JOB_NAME;
 import static com.sacknibbles.sch.constants.Constant.MANDATORY_DEPENDENCIES;
@@ -29,6 +30,8 @@ import com.sacknibbles.sch.controller.avro.util.Utils;
  */
 public class JobDetailBuilder {
 
+	
+
 	private JobDetailBuilder(){}
 	
 	public static JobDetail buildJobDetail(JobRequestRecord jobRequestRecord, Class<? extends Job> httpJobType){
@@ -36,6 +39,7 @@ public class JobDetailBuilder {
 		JobDataMap jobDataMap = new JobDataMap();
 		jobDataMap.put(JOB_GROUP_NAME, jobRequestRecord.getJobGroupName());
 		jobDataMap.put(JOB_NAME, jobRequestRecord.getJobName());
+		jobDataMap.put(JOB_ID, jobRequestRecord.getJobId());
 		jobDataMap.put(JOB_KEY,jobKey );
 		jobDataMap.put(CLIENT_IDENTIFIER, jobRequestRecord.getClientIdentity());
 		jobDataMap.put(TARGET_URL, jobRequestRecord.getTargetUrl());

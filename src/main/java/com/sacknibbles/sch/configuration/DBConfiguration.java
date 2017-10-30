@@ -18,10 +18,10 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 @Configuration
 public class DBConfiguration {
 
-	private @Value("${org.quartz.dataSource.qtzDS.driver}") String driverClassName;
-	private @Value("${org.quartz.dataSource.qtzDS.URL}") String dataSourceURL;
-	private @Value("$org.quartz.dataSource.qtzDS.user") String dbUserName;
-	private @Value("${org.quartz.dataSource.qtzDS.password}") String dbPassword;
+	private @Value("${db.default.driver}") String driverClassName;
+	private @Value("${db.default.url}") String dataSourceURL;
+	private @Value("${db.default.username}") String dbUserName;
+	private @Value("${db.default.password}") String dbPassword;
 
 	@Bean(name = "quartzDataSource")
 	@Primary

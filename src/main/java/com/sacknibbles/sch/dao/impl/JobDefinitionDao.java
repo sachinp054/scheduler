@@ -15,7 +15,8 @@ import com.sacknibbles.sch.constants.DaoName;
 import com.sacknibbles.sch.controller.avro.util.Utils;
 import com.sacknibbles.sch.dao.Dao;
 import com.sacknibbles.sch.entity.JobDefinitionVO;
-import com.sacknibbles.sch.scheduler.exception.UnSupportedOperationException;
+import com.sacknibbles.sch.scheduler.exception.HttpJobSchedulerDaoException;
+import com.sacknibbles.sch.scheduler.exception.UnSupportedDaoOperationException;
 
 /**
  * @author Sachin
@@ -44,28 +45,41 @@ public class JobDefinitionDao implements Dao<JobDefinitionVO> {
 	}
 
 	@Override
-	public JobDefinitionVO insert(JobDefinitionVO t) throws Exception {
-		t.setJobId(Utils.getId());
-		jdbcTemplate.update(INSERT_QUERY, t.getJobId(), t.getJobName(), t.getJobGroupName(), t.getJobRequestPayload(),
-				new Date(System.currentTimeMillis()));
-		return t;
+	public JobDefinitionVO insert(JobDefinitionVO t) throws HttpJobSchedulerDaoException {	
+		try{
+			t.setJobId(Utils.getId());
+			jdbcTemplate.update(INSERT_QUERY, t.getJobId(), t.getJobName(), t.getJobGroupName(), t.getJobRequestPayload(),
+					new Date(System.currentTimeMillis()));
+			return t;
+		}catch(Exception e){
+			throw new HttpJobSchedulerDaoException(e.getLocalizedMessage());
+		}
+		
 	}
 
 	@Override
-	public JobDefinitionVO update(JobDefinitionVO t) throws Exception {
-		throw new UnSupportedOperationException(
+	public JobDefinitionVO update(JobDefinitionVO t) throws HttpJobSchedulerDaoException {
+		throw new UnSupportedDaoOperationException(
 				"Job definition update is not permitted. Delete the current job and create a new job");
 	}
 
 	@Override
-	public List<JobDefinitionVO> fetchAll() throws Exception {
-		return jdbcTemplate.queryForList(FETCH_ALL_QUERY, JobDefinitionVO.class);
+	public List<JobDefinitionVO> fetchAll() throws HttpJobSchedulerDaoException {
+		try{
+			return jdbcTemplate.queryForList(FETCH_ALL_QUERY, JobDefinitionVO.class);
+		}catch(Exception e){
+			throw new HttpJobSchedulerDaoException(e.getLocalizedMessage());
+		}
 	}
 
 	@Override
-	public JobDefinitionVO fetchById(String id) throws Exception {
-		return jdbcTemplate.queryForObject(FETCH_BY_ID_QUERY, new Object[] { id },
-				new BeanPropertyRowMapper<JobDefinitionVO>(JobDefinitionVO.class));
-	}
+	public JobDefinitionVO fetchById(String id) throws HttpJobSchedulerDaoException {
+		try{
+			return jdbcTemplate.queryForObject(FETCH_BY_ID_QUERY, new Object[] { id },
+					new BeanPropertyRowMapper<JobDefinitionVO>(JobDefinitionVO.class));
+		}catch(Exception e){
+			throw new HttpJobSchedulerDaoException(e.getLocalizedMessage());
+		}
+}
 
 }

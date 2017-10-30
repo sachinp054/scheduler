@@ -16,8 +16,6 @@ import org.apache.avro.specific.SpecificDatumWriter;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import com.sacknibbles.sch.avro.model.SchedulerResponse;
 
@@ -40,20 +38,20 @@ public final class Utils {
 		return UUID.randomUUID().toString();
 	}
 	
-	private static <T>String convertToAvroPayload(T t) throws IOException{
+	public  static <T>String convertToAvroPayload(T t) {
 		String payload = null;
 		JsonEncoder encoder = null;
 		if(t instanceof SchedulerResponse){
 			 out = new ByteArrayOutputStream();
-			 encoder = EncoderFactory.get().jsonEncoder(SchedulerResponse.SCHEMA$, out );
-			writer.write((SchedulerResponse)t, encoder);
-			encoder.flush();
-			payload = out.toString();
-			out.flush();
-		}
-		
+			 try {
+				encoder = EncoderFactory.get().jsonEncoder(SchedulerResponse.SCHEMA$, out );
+				writer.write((SchedulerResponse)t, encoder);
+				encoder.flush();
+				payload = out.toString();
+				out.flush();
+			} catch (IOException e) {logger.error("Exception occured!",e);}
 			
-		
+		}
 		return payload;
 	}
 	
@@ -65,29 +63,4 @@ public final class Utils {
 		return jobKeyMap.get(k1);
 	}
 	
-	public static <T> ResponseEntity<String> generateResponseEntity(T t) {
-		ResponseEntity<String> responseEntity = null;
-		HttpStatus httpStatus = null;
-		String body = null;
-		if(t instanceof SchedulerResponse){
-			 SchedulerResponse response = (SchedulerResponse) t;
-			 if(Objects.nonNull(response.getException()) && !response.getException().isEmpty()){
-				 httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-			 }else{
-				 httpStatus = HttpStatus.OK;
-			 }
-			 try {
-				 body = convertToAvroPayload(t);
-				} catch (Exception e) {
-					 logger.error("",e);
-					 httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-					 response.setException(e.toString());
-					 response.setResponseMessage(response.getResponseMessage()+ "| Exception occured while generating service response");
-					 body = response.toString();
-				}
-		}
-		responseEntity = ResponseEntity.status(httpStatus).
-				 body(body);
-		return responseEntity;
-	}
 }

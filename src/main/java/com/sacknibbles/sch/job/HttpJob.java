@@ -5,7 +5,7 @@ package com.sacknibbles.sch.job;
 
 import org.quartz.JobExecutionContext;
 
-import com.sacknibbles.sch.avro.model.SchedulerResponse;
+import com.sacknibbles.sch.avro.model.SchedulerResponse.Builder;
 
 /**
  * @author Sachin
@@ -13,10 +13,12 @@ import com.sacknibbles.sch.avro.model.SchedulerResponse;
  */
 public class HttpJob extends BaseJob{
 
-	
+	/* (non-Javadoc)
+	 * @see com.sacknibbles.sch.job.BaseJob#executeJob(org.quartz.JobExecutionContext, com.sacknibbles.sch.avro.model.SchedulerResponse.Builder)
+	 */
 	@Override
-	protected SchedulerResponse executeJob(SchedulerResponse result, JobExecutionContext context) {
-		return null;
+	protected Builder executeJob(JobExecutionContext context, Builder result) {
+		return result;
 	}
 
 }

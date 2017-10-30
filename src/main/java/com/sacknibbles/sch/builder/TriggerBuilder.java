@@ -15,11 +15,10 @@ import java.util.Set;
 import org.quartz.Trigger;
 
 import com.sacknibbles.sch.avro.model.JobRequestRecord;
-import com.sacknibbles.sch.avro.model.SchedulerResponse.Builder;
 import com.sacknibbles.sch.avro.model.TriggerRecord;
 import com.sacknibbles.sch.controller.avro.util.HttpJobDateParser;
 import com.sacknibbles.sch.controller.avro.util.Utils;
-import com.sacknibbles.sch.scheduler.exception.InvalidCronExpression;
+import com.sacknibbles.sch.scheduler.exception.BadRequestException;
 /**
  * @author Sachin
  *
@@ -28,7 +27,7 @@ public class TriggerBuilder {
 
 	private TriggerBuilder(){}
 	
-	public static Set<Trigger> buidlTriggers(JobRequestRecord jobResuestRecord, Builder respBuilder){
+	public static Set<Trigger> buidlTriggers(JobRequestRecord jobResuestRecord) throws BadRequestException{
 		TriggerRecord trigger = jobResuestRecord.getTrigger();
 		String cron = trigger.getCron();
 		String schedule = trigger.getSchedule();
@@ -38,8 +37,7 @@ public class TriggerBuilder {
 				t = newTrigger().withIdentity(getTriggerKey()).withSchedule(cronSchedule(cron))
 						.usingJobData("cron",cron).build();
 			}else{
-				respBuilder.setException(new InvalidCronExpression().toString())
-				.setResponseMessage("Cron expression ["+cron+"] is invalid!!");
+				throw new BadRequestException("Cron expression ["+cron+"] is not valid!!");
 			}
 		}else if(!isNullOrEmpty(schedule)){
 			Date triggerTime = null;
@@ -48,8 +46,7 @@ public class TriggerBuilder {
 				t = newTrigger().withIdentity(getTriggerKey()).startAt(triggerTime)
 						.usingJobData("schedule",schedule).build();
 			}catch(Exception e){
-				respBuilder.setException(e.toString())
-				.setResponseMessage("Could not parse trigger schedule. Schedule detail should either be in LocalDateTime.toString() format or "
+				throw new BadRequestException("Could not parse trigger schedule. Schedule detail should either be in LocalDateTime.toString() format or "
 						+ " dd/MM/yyyy HH24:mm format");
 			}
 		}

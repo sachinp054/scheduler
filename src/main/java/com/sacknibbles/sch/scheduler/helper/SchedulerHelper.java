@@ -27,6 +27,7 @@ import com.sacknibbles.sch.entity.JobDefinitionVO;
 import com.sacknibbles.sch.entity.JobDependencyVO;
 import com.sacknibbles.sch.entity.JobStatusVO;
 import com.sacknibbles.sch.factory.HttpJobSchedulerFactory;
+import com.sacknibbles.sch.scheduler.exception.HttpJobSchedulerDaoException;
 
 /**
  * @author Sachin
@@ -61,8 +62,8 @@ public class SchedulerHelper {
 		return Objects.nonNull(nextFireTime) ? nextFireTime.toString() : "NA'";
 	}
 
-	public void createJobDefinition(String jobId, String jobName, String jobGroupName, String payload)
-			throws Exception {
+	public void createJobDefinition(String jobId, String jobName, String jobGroupName, String payload) throws HttpJobSchedulerDaoException
+			{
 		JobDefinitionVO vo = new JobDefinitionVO();
 		vo.setJobId(jobId);
 		vo.setJobName(jobName);
@@ -72,7 +73,7 @@ public class SchedulerHelper {
 		jobDefinitionDao.insert(vo);
 	}
 
-	public void createJobDependency(JobRequestRecord jobRequest) throws Exception {
+	public void createJobDependency(JobRequestRecord jobRequest) throws HttpJobSchedulerDaoException {
 		JobDependencyVO vo = new JobDependencyVO();
 		List<String> mandatoryDependencies = Objects.nonNull(jobRequest.getMandatoryDependencies())
 				? jobRequest.getMandatoryDependencies() : Collections.emptyList();
@@ -94,11 +95,29 @@ public class SchedulerHelper {
 		jobDependencyDao.insert(vo);
 	}
 
-	public void createJobStatusEntry(String jobId,JobStatus jobStatus, String errDesc) throws Exception {
+	public JobDependencyVO getJobDependencies(String jobId) throws HttpJobSchedulerDaoException{
+		return jobDependencyDao.fetchById(jobId);	
+	}
+	
+	public List<JobStatusVO> getJobStatusByIds(List<String> ids) throws HttpJobSchedulerDaoException{
+		List<JobStatusVO> vos = jobStatusDao.fetchByJobIds(ids);
+		return Objects.nonNull(vos)?vos:Collections.emptyList();
+	}
+	
+	public void createJobStatusEntry(String jobId,JobStatus jobStatus, String errDesc) throws HttpJobSchedulerDaoException {
 		JobStatusVO vo = new JobStatusVO();
 		vo.setJobId(jobId);
 		vo.setJobStatus(jobStatus);
 		vo.setErrorDesc(errDesc);
 		jobStatusDao.insert(vo);
 	}
+	
+	public void updateJobStatus(JobStatusVO vo) throws HttpJobSchedulerDaoException{
+		jobStatusDao.update(vo);
+	}
+	
+	public JobStatusVO getJobStatusVo(String jobId) throws HttpJobSchedulerDaoException{
+		return jobStatusDao.fetchById(jobId);
+	}
+	
 }

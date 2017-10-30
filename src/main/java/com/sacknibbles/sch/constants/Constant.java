@@ -15,6 +15,7 @@ public final class Constant {
 	
 	public static final String JOB_NAME="jobName";
 	public static final String JOB_GROUP_NAME ="jobGropName";
+	public static final String JOB_ID = "jobId";
 	public static final String JOB_KEY ="jobKey";
 	public static final String CLIENT_IDENTIFIER ="clientIdentifier";
 	public static final String TARGET_URL="targetUrl";
@@ -23,4 +24,6 @@ public final class Constant {
 	public static final String TARGET_URL_RETRY_LIMIT="retryLimit";
 	public static final String TARGET_URL_RETRY_RATE="retryrate";
 	public static final String MANDATORY_DEPENDENCIES="mandatoryJobDependencies";
+	public static final String SCHEDULER_HELPER = "schedulerHelper";
+	
 }

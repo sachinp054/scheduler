@@ -5,15 +5,27 @@
    "fields":[
       {
          "name":"jobId",
-         "type":"string"
+         "type":[
+            "string",
+            "null"
+         ],
+         "default":""
       },
       {
          "name":"jobGroupName",
-         "type":"string"
+         "type":[
+            "string",
+            "null"
+         ],
+         "default":""
       },
       {
          "name":"jobName",
-         "type":"string"
+         "type":[
+            "string",
+            "null"
+         ],
+         "default":""
       },
       {
          "name":"jobStatus",
@@ -21,6 +33,7 @@
             "type":"enum",
             "name":"JobStatus",
             "symbols":[
+               "ADDED",
                "ADDED_NOTSCHEDULED",
                "SCHEDULED",
                "STARTED",
@@ -40,14 +53,6 @@
             "null"
          ],
          "default":null
-      },
-      {
-         "name":"exception",
-         "type":[
-            "string",
-            "null"
-         ],
-         "default":""
       },
       {
          "name":"jobKey",
