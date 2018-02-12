@@ -5,6 +5,7 @@ package com.sacknibbles.sch.scheduler;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.quartz.JobDetail;
@@ -41,8 +42,8 @@ import com.sacknibbles.sch.scheduler.helper.SchedulerHelper;
  */
 @Service
 public class HttpJobScheduler {
+	private static final Logger logger = LoggerFactory.getLogger(HttpJobScheduler.class);
 
-	private Logger logger = LoggerFactory.getLogger(HttpJobScheduler.class);
 	@Autowired
 	private HttpJobSchedulerFactory schFactory;
 	@Autowired
@@ -67,11 +68,13 @@ public class HttpJobScheduler {
 			JobKey jobKey = Utils.getJobKey(jobRequest.getJobId(), jobRequest.getJobGroupName(),
 					jobRequest.getJobName());
 			SchedulerType schedulerType = jobRequest.getSchedulerType();
-			Scheduler scheduler = schFactory.getScheduler(schedulerType);
-			synchronized (jobKey) {
-				handleNewJobScheduling(jobRequest, jobKey, schedulerType, scheduler);
-				updateJobStatus(jobRequest);
-			}			
+			Optional<Scheduler> scheduler = schFactory.getScheduler(schedulerType);
+			if (scheduler.isPresent()) {
+				synchronized (jobKey) {
+					handleNewJobScheduling(jobRequest, jobKey, schedulerType, scheduler.get());
+					updateJobStatus(jobRequest);
+				}	
+			}
 		} catch (Exception e) {
 			handleException(jobRequest, e);
 		}
@@ -114,13 +117,13 @@ public class HttpJobScheduler {
 	 */
 	private JobRequestRecord preProcessSchedulingRequest(String jobRequestPayload) throws HttpJobSchedulerException, SchedulerException {
 		JobRequestRecord jobRequest = null;
-		jobRequest = requestValidator.jobRequestValidator(jobRequestPayload);
-		Scheduler scheduler = schFactory.getScheduler(jobRequest.getSchedulerType());
-		if (Objects.nonNull(scheduler)) {
+		jobRequest = requestValidator.validateAndGetJobRequestRecord(jobRequestPayload);
+		Optional<Scheduler> scheduler = schFactory.getScheduler(jobRequest.getSchedulerType());
+		if (scheduler.isPresent()) {
 			JobKey jobKey = Utils.getJobKey(jobRequest.getJobId(), jobRequest.getJobGroupName(),
 					jobRequest.getJobName());
 			if (schedulerHelper.ifJobExists(jobRequest.getSchedulerType(), jobKey)) {
-				handleAlreadyScheduledJob(jobKey, scheduler);
+				handleAlreadyScheduledJob(jobKey, scheduler.get());
 				return jobRequest;
 			}
 		} else {

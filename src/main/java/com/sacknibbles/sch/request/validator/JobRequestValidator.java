@@ -3,6 +3,8 @@
  */
 package com.sacknibbles.sch.request.validator;
 
+import static com.sacknibbles.sch.avro.model.JobRequestRecord.getClassSchema;
+
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
@@ -14,21 +16,19 @@ import com.sacknibbles.sch.scheduler.exception.BadRequestException;
 
 /**
  * @author Sachin
+ * @author Gaurav Rai Mazra {@link https://lineofcode.in}
  *
  */
 @Service
 public class JobRequestValidator {
+	private final DatumReader<JobRequestRecord> JOB_REQUEST_DATUM_READER = new SpecificDatumReader<>(JobRequestRecord.class);
 
-	private final DatumReader<JobRequestRecord> jobReqDatumReader = new SpecificDatumReader<>(JobRequestRecord.class);
-	
-	public JobRequestRecord jobRequestValidator(String jobRequestPayload) throws BadRequestException{
-		JobRequestRecord jobRequest = null;
+	public JobRequestRecord validateAndGetJobRequestRecord(String jobRequestPayload) throws BadRequestException {
 		try {
-			Decoder decoder = DecoderFactory.get().jsonDecoder(JobRequestRecord.SCHEMA$, jobRequestPayload);
-			jobRequest = jobReqDatumReader.read(null, decoder);
+			Decoder decoder = DecoderFactory.get().jsonDecoder(getClassSchema(), jobRequestPayload);
+			return JOB_REQUEST_DATUM_READER.read(null, decoder);
 		} catch (Exception e) {
 			throw new BadRequestException(e.getLocalizedMessage());
 		}
-		return jobRequest;
 	}
 }

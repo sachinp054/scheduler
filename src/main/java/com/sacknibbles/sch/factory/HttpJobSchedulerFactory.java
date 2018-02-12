@@ -4,6 +4,7 @@
 package com.sacknibbles.sch.factory;
 
 import java.util.EnumMap;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -37,9 +38,9 @@ public class HttpJobSchedulerFactory {
 
 	private Scheduler initialiseJdbcBasedScheduler() {
 		Scheduler schd = null;
-		SchedulerFactory schdFact = null;
+		
 		try {
-			schdFact = new StdSchedulerFactory("/quartz/" + ENV + "/quartz.properties");
+			SchedulerFactory schdFact = new StdSchedulerFactory("/quartz/" + ENV + "/quartz.properties");
 			schd = schdFact.getScheduler();
 			schd.start();
 		} catch (SchedulerException e) {
@@ -61,8 +62,8 @@ public class HttpJobSchedulerFactory {
 		return sched;
 	}
 
-	public Scheduler getScheduler(SchedulerType schedulerType) {
-		return schedulerMap.get(schedulerType);
+	public Optional<Scheduler> getScheduler(SchedulerType schedulerType) {
+		return Optional.ofNullable(schedulerMap.get(schedulerType));
 	}
 	
 	public Exception getException(SchedulerType schedulerType){
