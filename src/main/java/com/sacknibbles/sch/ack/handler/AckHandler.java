@@ -45,7 +45,7 @@ public class AckHandler {
 				headers.add("Authorization", authString);
 			}
 			String body;
-			body = Utils.convertToAvroPayload(schedulerResponse);
+			body = Utils.convertToAvroJSONString(schedulerResponse);
 			HttpEntity<String> request = new HttpEntity<>(body, headers);
 			ResponseEntity<HttpStatus> response = restTemplate.exchange(uri, method, request, HttpStatus.class);
 			logger.info("Received response[{}] for ack message [{}]", response.getBody(), urlRecord);
