@@ -10,20 +10,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sacknibbles.sch.scheduler.RequestHandler;
+import com.sacknibbles.sch.scheduler.JobRequestHandler;
 
 /**
  * @author Sachin
  *
  */
 @RestController
-public class Controller {
+public class JobController {
 
 	@Autowired
-	private RequestHandler requestHandler;
+	private JobRequestHandler requestHandler;
 	
 	@PostMapping(value="/job",consumes=MediaType.APPLICATION_JSON_VALUE,produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> createJob(@RequestBody String jobRequestPayload){	
-		return requestHandler.handleJobSchedulingAndGenerateResponseEntity(jobRequestPayload);
+		return requestHandler.scheduleJob(jobRequestPayload);
 	}
 }

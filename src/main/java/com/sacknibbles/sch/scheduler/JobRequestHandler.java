@@ -3,6 +3,8 @@
  */
 package com.sacknibbles.sch.scheduler;
 
+import static com.sacknibbles.sch.controller.avro.util.Utils.convertToAvroJSONString;
+
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,15 +29,15 @@ import com.sacknibbles.sch.scheduler.helper.SchedulerHelper;
  *
  */
 @Service
-public class RequestHandler {
-
-	private Logger logger = LoggerFactory.getLogger(RequestHandler.class);
+public class JobRequestHandler {
+	private Logger logger = LoggerFactory.getLogger(JobRequestHandler.class);
+	
 	@Autowired
 	private HttpJobScheduler httpJobScheduler;
 	@Autowired
 	private SchedulerHelper schedulerHelper;
 
-	public ResponseEntity<String> handleJobSchedulingAndGenerateResponseEntity(String jobRequestPayload) {
+	public ResponseEntity<String> scheduleJob(String jobRequestPayload) {
 		Builder response = SchedulerResponse.newBuilder();
 		HttpStatus httpStatus = HttpStatus.OK;
 		JobRequestRecord request = null;
@@ -73,7 +75,7 @@ public class RequestHandler {
 			response.setResponseMessage(e.getLocalizedMessage()).setJobStatus(JobStatus.FAILED);
 		}
 
-		return ResponseEntity.status(httpStatus).body(Utils.convertToAvroPayload(response.build()));
+		return ResponseEntity.status(httpStatus).body(convertToAvroJSONString(response.build()));
 	}
 
 	/**
