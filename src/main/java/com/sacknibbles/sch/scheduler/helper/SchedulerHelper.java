@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -46,20 +47,26 @@ public class SchedulerHelper {
 	private JobStatusDao jobStatusDao;
 
 	public boolean ifJobExists(SchedulerType schedulerType, JobKey jobKey) throws SchedulerException {
-		return schFactory.getScheduler(schedulerType).checkExists(jobKey);
+		Optional<Scheduler> scheduler = schFactory.getScheduler(schedulerType);
+		if (scheduler.isPresent()) {
+			return scheduler.get().checkExists(jobKey);
+		}
+		throw new SchedulerException("No Scheduler configured for type: " + schedulerType);
 	}
 
 	public String getNextFireTime(SchedulerType schedulerType, JobKey jobKey) throws SchedulerException {
-		Scheduler scheduler = schFactory.getScheduler(schedulerType);
-		List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
-		Date nextFireTime = null;
-		if (!triggers.isEmpty()) {
-			nextFireTime = triggers.get(0).getNextFireTime();
-		} else {
-			return "NA";
+		Optional<Scheduler> scheduler = schFactory.getScheduler(schedulerType);
+		if (scheduler.isPresent()) {
+			List<? extends Trigger> triggers = scheduler.get().getTriggersOfJob(jobKey);
+			Date nextFireTime = null;
+			if (!triggers.isEmpty()) {
+				nextFireTime = triggers.get(0).getNextFireTime();
+				return Objects.nonNull(nextFireTime) ? nextFireTime.toString() : "NA'";
+			} else {
+				return "NA";
+			}
 		}
-
-		return Objects.nonNull(nextFireTime) ? nextFireTime.toString() : "NA'";
+		throw new SchedulerException("No Scheduler configured for type: " + schedulerType);
 	}
 
 	public void createJobDefinition(String jobId, String jobName, String jobGroupName, String payload) throws HttpJobSchedulerDaoException
