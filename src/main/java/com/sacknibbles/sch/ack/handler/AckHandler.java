@@ -19,7 +19,9 @@ import com.sacknibbles.sch.avro.model.URLRecord;
 import com.sacknibbles.sch.controller.avro.util.Utils;
 
 /**
- * @author Sachin
+ * This will handle the acknowledgement of job completion once it is completed.
+ * Currently, we only send acknowledgement on callback url or on email
+ * @author Sachin Pandey
  *
  */
 public class AckHandler {
@@ -30,7 +32,7 @@ public class AckHandler {
 	private AckHandler() {
 	}
 
-	public static void sendAcknowledgement(URLRecord urlRecord, SchedulerResponse schedulerResponse) {
+	public static void sendAcknowledgement(URLRecord urlRecord, SchedulerResponse response) {
 		if (Objects.nonNull(urlRecord)) {
 			String uri = urlRecord.getUri();
 			HttpMethod method = HttpMethod.valueOf(urlRecord.getMethod());
@@ -45,14 +47,18 @@ public class AckHandler {
 				headers.add("Authorization", authString);
 			}
 			String body;
-			body = Utils.convertToAvroJSONString(schedulerResponse);
+			body = Utils.convertToAvroJSONString(response);
 			HttpEntity<String> request = new HttpEntity<>(body, headers);
-			ResponseEntity<HttpStatus> response = restTemplate.exchange(uri, method, request, HttpStatus.class);
-			logger.info("Received response[{}] for ack message [{}]", response.getBody(), urlRecord);
+			ResponseEntity<HttpStatus> ackResponse = restTemplate.exchange(uri, method, request, HttpStatus.class);
+			logger.info("Received response[{}] for ack message [{}]", ackResponse.getBody(), urlRecord);
 		}
+		else
+			logger.debug(
+					String.format("There is no url to send ackowledgement for jobGroup: %s, jobName: %s, jobId: %s",
+							response.getJobGroupName(), response.getJobName(), response.getJobId()));
 	}
 
-	public static void sendAcknowledgement(String email, SchedulerResponse schedulerResponse) {
+	public static void sendAcknowledgement(String email, SchedulerResponse response) {
 		logger.warn("Could not send email!, currently this feature is unavailable");
 	}
 }

@@ -46,7 +46,8 @@
 			<artifactId>quartz</artifactId>
 			<version>${quartz.version}</version>
 		</dependency>
-		<!-- other dependencies -->
+		
+		<!-- Apache AVRO dependencies -->
 		<dependency>
 			<groupId>org.apache.avro</groupId>
 			<artifactId>avro</artifactId>
@@ -72,28 +73,23 @@
 			<artifactId>avro-tools</artifactId>
 			<version>${avro.version}</version>
 		</dependency>
-		<!-- logback dependencies -->
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>log4j-over-slf4j</artifactId>
 		</dependency>
-		<!-- embeded db for dev profile -->
+
+		<!-- embeded db for dev profile or testing only -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
-<!-- 		<dependency> -->
-<!-- 			<groupId>com.fasterxml.jackson.core</groupId> -->
-<!-- 			<artifactId>jackson-databind</artifactId> -->
-<!-- 			<version>2.2.3</version> -->
-<!-- 		</dependency> -->
 	</dependencies>
 
 	<build>
